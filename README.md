@@ -6,8 +6,8 @@ Editing Environment Variables via GUI
 
 Adding PATH
 
-Commands like uname -r
-
+Commands like uname -r                                                                                                                         imp: login.altair.com 
+                                                                                                                                                jfrog is a internal repostitory 
 Using --version
 
 You can replace your existing README.md with the below content.
@@ -154,8 +154,163 @@ hwdesktop
 
 Machine: BLRLAP1252
 
+
+-----------------------------------------------------------------------------------------------------------------------
+what did the link do  : What is this link?
+Index of modvis/hwdesktop/2026.1/dev/2026.1.0.13-murugahwxreport2026reportgu-320244/win64/
+hwDesktop2026.1.0.13-murugahwxreport2026reportgu-320244_win64.exe
+
+
+This is a build package stored on Altair’s internal repository (JFrog Artifactory).
+
+It contains the installer for:
+
+Altair HyperWorks Desktop
+
+Version: 2026.1.0.13
+
+OS: Windows 64-bit
+
+Breaking the Path (Understanding Each Part)
+modvis/
+
+
+👉 Module Visualization team build
+
+hwdesktop/
+
+
+👉 HyperWorks Desktop product
+
+2026.1/
+
+
+👉 Major release version
+
+dev/
+
+
+👉 Development build (not public release)
+
+2026.1.0.13-murugahwxreport2026reportgu-320244
+
+
+👉 Specific internal build:
+
+0.13 → build number
+
+murugahwxreport2026reportgu → feature branch name
+
+320244 → internal build ID
+
+win64/
+
+
+👉 For 64-bit Windows
+
+hwDesktop2026.1.0.13-..._win64.exe
+
+
+👉 Final executable installer file
+
+What Does This .exe File Do?
+
+When you run:
+
+hwDesktop2026.1.0.13-....exe
+
+
+It:
+
+1️⃣ Extracts installation files
+2️⃣ Installs HyperWorks Desktop
+3️⃣ Creates program folders
+4️⃣ Registers executables
+5️⃣ Adds start menu entries
+What It Installs
+
+It installs:
+
+Core Application
+
+Altair HyperWorks Desktop
+
+Modules Included
+
+HyperMesh (pre-processing)
+
+HyperView (post-processing)
+
+Solver interfaces
+
+Report UI (if enabled with HW_ENABLE_REPORT_UI=1)
+
+Where It Installs Files
+
+Default location:
+
+C:\Program Files\Altair\2026.1\
+
+
+Inside this folder you will find:
+
+hwdesktop\
+hm\
+hv\
+common\
+scripts\
+
+What It Does NOT Install
+
+❌ It does NOT install:
+
+License server (uses floating license)
+
+Solver binaries (if not selected)
+
+Cygwin (must be installed separately)
+
+After Installation, You Must
+
+Set license variable:
+
+ALTAIR_LICENSE_PATH=6200@trlicsrv02;6200@trlicsrv03
+
+
+Enable report UI:
+
+HW_ENABLE_REPORT_UI=1
+
+
+Add to PATH (optional):
+
+C:\Program Files\Altair\2026.1\hwdesktop
+
+How To Verify It Installed Correctly
+
+Open CMD:
+
+hwdesktop --version
+
+
+If working, it shows version:
+
+2026.1.0.13
+
+Simple Summary
+
+This file is:
+
+👉 A Windows installer
+👉 For HyperWorks Desktop 2026.1
+👉 Internal development build
+👉 Installs simulation GUI tools
+👉 Needs license server to run
+
 Floating License Setup
 
 64-bit Windows
+------------------------------------------------------------------------------------------
+
 
 Report UI enabled manually
