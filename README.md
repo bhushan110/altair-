@@ -1,5 +1,5 @@
 # altair-
-steps to install hyper works , cygwin , visual studio 2022 ticket is pending work .
+steps to install hyper works , cygwin , visual studio 2022 ticket is pending work .                                 it is the location  of C:\altair\hwxreport2026dev320244\hwdesktop\hwx\scripts\python\report
 Here is your updated professional README.md including:
 
 Editing Environment Variables via GUI
