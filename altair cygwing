@@ -1,0 +1,125 @@
+What is Cygwin?
+
+Cygwin is a tool that:
+
+👉 Makes Windows behave like Linux
+👉 Gives you a Linux terminal (bash) on Windows
+
+Why Is Cygwin Used?
+
+Some engineering tools (like Altair tools) were originally built for:
+
+Linux
+
+UNIX systems
+
+So they need:
+
+Bash shell
+
+Linux commands
+
+Unix-style scripts
+
+Windows does not support these by default.
+
+So we use Cygwin.
+
+Why Cygwin in Altair / HyperWorks?
+
+When you install:
+
+Altair HyperWorks
+
+It uses:
+
+Shell scripts
+
+Environment scripts
+
+Unix commands internally
+
+For example:
+
+uname -r
+cygcheck -V
+which hwdesktop
+
+
+These are Linux-style commands.
+
+What Cygwin Helps With
+1️⃣ Running Shell Scripts
+
+Many internal scripts are:
+
+.sh files
+
+
+These need bash.
+
+2️⃣ Build & Dev Environment
+
+For development builds (like you installed):
+
+dev/2026.1.0.13
+
+
+Developers use:
+
+make
+
+gcc
+
+bash
+
+awk
+
+grep
+
+These come from Cygwin.
+
+3️⃣ License / Environment Setup
+
+Some license tools and environment scripts are Unix-based.
+
+Cygwin helps run them.
+
+Example Without Cygwin
+
+If you run:
+
+uname -r
+
+
+In normal CMD ❌ → It won’t work.
+
+In Cygwin ✅ → It works.
+
+Is Cygwin Mandatory?
+
+🟢 For normal users → Not always
+🟡 For development builds → Usually yes
+🔵 For internal testing → Often required
+
+Simple Summary
+
+Cygwin is used because:
+
+Reason	Why
+Linux Commands	Windows doesn't have them
+Bash Scripts	Needed for automation
+Dev Builds	Internal scripts depend on it
+Compatibility	Makes Windows act like Linux
+In Your Case
+
+Since you ran:
+
+cygcheck -V
+uname -r
+
+
+That means:
+
+👉 You are verifying Cygwin environment
+👉 Likely using development/internal build
