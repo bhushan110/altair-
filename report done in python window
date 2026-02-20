@@ -1,0 +1,79 @@
+Jupyter QtConsole 5.6.1
+Python 3.10.18 (main, Aug 15 2025, 05:10:21) [MSC v.1928 64 bit (AMD64)]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.12.3 -- An enhanced Interactive Python. Type '?' for help.
+
+IPython profile: hwx
+.pyc file cannot be parsed statically. Ensure the .py source was compiled correctly.
+
+from report.hwxdocxtypes import *
+
+import os
+
+doc =Document("hyper view doc")
+
+ch1=Chapter("result",parent=doc)
+
+i1=Image(name="Image1",parent=ch1)
+
+i1.path"C:/Users/ajaguri/Downloads/buildtools/bvt/hwreport/core/data/Iso View.png"
+  Cell In[6], line 1
+    i1.path"C:/Users/ajaguri/Downloads/buildtools/bvt/hwreport/core/data/Iso View.png"
+           ^
+SyntaxError: invalid syntax
+
+
+i1.path="C:/Users/ajaguri/Downloads/buildtools/bvt/hwreport/core/data/Iso View.png"
+
+doc.saveDocx("C:\Users\ajaguri\Desktop\example",open=True)
+  Cell In[8], line 1
+    doc.saveDocx("C:\Users\ajaguri\Desktop\example",open=True)
+                                                   ^
+SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 2-3: truncated \UXXXXXXXX escape
+
+
+doc.saveDocx("C:\Users\ajaguri\Desktop\example",open=True)
+  Cell In[9], line 1
+    doc.saveDocx("C:\Users\ajaguri\Desktop\example",open=True)
+                                                   ^
+SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 2-3: truncated \UXXXXXXXX escape
+
+
+doc.saveDocx("C:/Users/ajaguri/Desktop/example",open=True)
+Out[10]: 
+(HwxReportResult(status=0, message=''),
+ 'C:/Users/ajaguri/Desktop/example.docx')
+
+run
+---------------------------------------------------------------------------
+IndexError                                Traceback (most recent call last)
+File C:\altair\hwxreport2026dev320244\common\python\python3.10\win64\lib\site-packages\IPython\core\magics\execution.py:700, in ExecutionMagics.run(self, parameter_s, runner, file_finder)
+    699 fpath = None # initialize to make sure fpath is in scope later
+--> 700 fpath = arg_lst[0]
+    701 filename = file_finder(fpath)
+
+IndexError: list index out of range
+
+The above exception was the direct cause of the following exception:
+
+Exception                                 Traceback (most recent call last)
+Cell In[11], line 1
+----> 1 get_ipython().run_line_magic('run', '')
+
+File C:\altair\hwxreport2026dev320244\common\python\python3.10\win64\lib\site-packages\IPython\core\interactiveshell.py:2417, in InteractiveShell.run_line_magic(self, magic_name, line, _stack_depth)
+   2415     kwargs['local_ns'] = self.get_local_scope(stack_depth)
+   2416 with self.builtin_trap:
+-> 2417     result = fn(*args, **kwargs)
+   2419 # The code below prevents the output from being displayed
+   2420 # when using magics with decodator @output_can_be_silenced
+   2421 # when the last Python token in the expression is a ';'.
+   2422 if getattr(fn, magic.MAGIC_OUTPUT_CAN_BE_SILENCED, False):
+
+File C:\altair\hwxreport2026dev320244\common\python\python3.10\win64\lib\site-packages\IPython\core\magics\execution.py:704, in ExecutionMagics.run(self, parameter_s, runner, file_finder)
+    702 except IndexError as e:
+    703     msg = 'you must provide at least a filename.'
+--> 704     raise Exception(msg) from e
+    705 except IOError as e:
+    706     try:
+
+Exception: you must provide at least a filename.
