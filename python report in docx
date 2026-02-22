@@ -1,0 +1,57 @@
+Jupyter QtConsole 5.6.1
+Python 3.10.18 (main, Aug 15 2025, 05:10:21) [MSC v.1928 64 bit (AMD64)]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.12.3 -- An enhanced Interactive Python. Type '?' for help.
+
+IPython profile: hwx
+.pyc file cannot be parsed statically. Ensure the .py source was compiled correctly.
+
+from report.hwxdocxtypes import *
+import os
+doc =Document("hyper view doc")
+ch1=Chapter("result",parent=doc)
+i1=Image(name="Image1",parent=ch1)
+i1.path="C:/Users/ajaguri/Downloads/buildtools/bvt/hwreport/core/data/Iso View.png"
+doc.saveDocx("C:/Users/ajaguri/Desktop/example",open=True)
+Out[1]: 
+(HwxReportResult(status=0, message=''),
+ 'C:/Users/ajaguri/Desktop/example.docx')
+
+ooutput----------------------------------------------------
+ANALYSIS NAME
+Altair Design Report
+BUSINESS FUNCTION 	Commercial Product Solutions	
+PROGRAM 	New Product Development	
+PROJECT GROUP	Product Simulations and Correlations	
+PRODUCT CODE	CF270	
+PLATFORM	Light Cruiser	
+RELEASE TARGET	2025	
+REPORT DATE		
+
+ABSTRACT	
+	
+
+	Name	Responsibilities	Review Status: Yes / No
+Date of Review	
+PROJECT LEADS				
+				
+				
+SUPERVISOR / ENGINEERING LEAD				
+				
+				
+
+ 
+Contents	
+1	result	5
+
+ 
+Table of Figures
+No table of figures entries found.
+ 
+Table of Tables
+No table of figures entries found.
+ 
+
+1	result
+ ----------------------------------------------------------------------------
+ 
