@@ -1,57 +1,58 @@
-Jupyter QtConsole 5.6.1
-Python 3.10.18 (main, Aug 15 2025, 05:10:21) [MSC v.1928 64 bit (AMD64)]
-Type 'copyright', 'credits' or 'license' for more information
-IPython 8.12.3 -- An enhanced Interactive Python. Type '?' for help.
 
 IPython profile: hwx
 .pyc file cannot be parsed statically. Ensure the .py source was compiled correctly.
 
 from report.hwxdocxtypes import *
 import os
-doc =Document("hyper view doc")
-ch1=Chapter("result",parent=doc)
-i1=Image(name="Image1",parent=ch1)
-i1.path="C:/Users/ajaguri/Downloads/buildtools/bvt/hwreport/core/data/Iso View.png"
-doc.saveDocx("C:/Users/ajaguri/Desktop/example",open=True)
-Out[1]: 
-(HwxReportResult(status=0, message=''),
- 'C:/Users/ajaguri/Desktop/example.docx')
 
-ooutput----------------------------------------------------
-ANALYSIS NAME
-Altair Design Report
-BUSINESS FUNCTION 	Commercial Product Solutions	
-PROGRAM 	New Product Development	
-PROJECT GROUP	Product Simulations and Correlations	
-PRODUCT CODE	CF270	
-PLATFORM	Light Cruiser	
-RELEASE TARGET	2025	
-REPORT DATE		
+# Start Report Session
+se = ReportSession()
 
-ABSTRACT	
-	
+# ---- Data Folder (your images, csv, template are here) ----
+data_path = r"C:/Users/ajaguri/Downloads/buildtools/bvt/hwreport/core/data"
 
-	Name	Responsibilities	Review Status: Yes / No
-Date of Review	
-PROJECT LEADS				
-				
-				
-SUPERVISOR / ENGINEERING LEAD				
-				
-				
+# ---- File Paths ----
+path1 = os.path.join(data_path, "Iso View.png")
+path2 = os.path.join(data_path, "top view.png")
+path3 = os.path.join(data_path, "left side view.png")
+path4 = os.path.join(data_path, "front view.png")
+path5 = os.path.join(data_path, "unitsystem.csv")
+templ = os.path.join(data_path, "wordTemplate.docx")
 
- 
-Contents	
-1	result	5
+# ---- Create Table from CSV ----
+table1 = Table()
+table1.csvFile = path5
 
- 
-Table of Figures
-No table of figures entries found.
- 
-Table of Tables
-No table of figures entries found.
- 
+# ---- Create Document ----
+doc = Document()
+doc.template = templ
 
-1	result
- ----------------------------------------------------------------------------
- 
+# ---- Main Chapter ----
+main_ch = Chapter(parent=doc, name="Main Chapter")
+
+# ---- Sub Chapters ----
+sub1 = Chapter(parent=main_ch, name="Sub Chapter 1")
+sub2 = Chapter(parent=main_ch, name="Sub Chapter 2")
+sub3 = Chapter(parent=main_ch, name="Sub Chapter 3")
+
+# ---- Main Chapter Content ----
+img_main = DocImage(parent=main_ch, name="Main Image", image=path1)
+tbl_main = DocTable(parent=main_ch, name="Main Table", table=table1)
+
+# ---- Sub Chapter 1 ----
+img1 = DocImage(parent=sub1, name="Image 1", image=path2)
+tbl1 = DocTable(parent=sub1, name="Table 1", table=table1)
+
+# ---- Sub Chapter 2 ----
+img2 = DocImage(parent=sub2, name="Image 2", image=path3)
+tbl2 = DocTable(parent=sub2, name="Table 2", table=table1)
+
+# ---- Sub Chapter 3 ----
+img3 = DocImage(parent=sub3, name="Image 3", image=path4)
+tbl3 = DocTable(parent=sub3, name="Table 3", table=table1)
+
+# ---- Output Location ----
+outfile = r"C:/Users/ajaguri/Desktop/example/docx_headings_demo.docx"
+
+# ---- Generate Report ----
+doc.saveDocx(outfile, open=True)
