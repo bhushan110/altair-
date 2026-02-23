@@ -1,0 +1,62 @@
+from report.hwxpptxtypes import *
+
+import os
+
+session1 = ReportSession()
+
+img1=Image()
+
+img1.caption='Image 1'
+
+img1.path = r"C:\altair\hwxreport2026dev320244\hwdesktop\hwx\modules\plot\resources\ICON_view_iso.png"
+
+pres=Presentation()
+
+pres.template=templatefile
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+Cell In[15], line 1
+----> 1 pres.template=templatefile
+
+NameError: name 'templatefile' is not defined
+
+pres.size('16:9')
+
+slide1=Slide('Slide1',presentation=pres)
+2026-02-23 09:16:29,059 - layout_callback - ERROR - Entity type is not MDIReportPresentation: report.cdm.slide.MDIReportSlide
+
+slide1=Slide('Slide',presentation=pres)
+2026-02-23 09:17:33,187 - layout_callback - ERROR - Entity type is not MDIReportPresentation: report.cdm.slide.MDIReportSlide
+
+slide1.titleText='Slide Auto Layout-One Image'
+
+slide1.add(img1,'S1 Image)
+  Cell In[20], line 1
+    slide1.add(img1,'S1 Image)
+                    ^
+SyntaxError: unterminated string literal (detected at line 1)
+
+
+slide1.add(image1)
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+Cell In[21], line 1
+----> 1 slide1.add(image1)
+
+NameError: name 'image1' is not defined
+
+slide1.add(img1)
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+Cell In[22], line 1
+----> 1 slide1.add(img1)
+
+TypeError: Slide.add() missing 1 required positional argument: 'name'
+
+slide1.add(img1,"Image 1")
+Out[23]: <report.hwxofficetypes.Image at 0x2681d285030>
+
+pres.savePPTX("C:/Users/ajaguri/Desktop/example",open=True)
+Out[24]: 
+(HwxReportResult(status=0, message=''),
+ 'C:/Users/ajaguri/Desktop/example.pptx')
