@@ -1,0 +1,49 @@
+
+
+from report.hwxdocxtypes import *
+from report.plugins.extensions import *
+import uuid
+import mdi
+import os
+
+se = ReportSession('se')
+
+model = mdi.Model(se.name)
+doc = Document()
+
+pg = MDIReportPlugin(model, str(uuid.uuid1()), owner=doc._metaobj)
+pg.name = "Session capture"
+pg.cls = 'SessionCapture'
+options = MDIScreenCaptureExt(pg.mdimodel, 'Session_capture_options', owner=pg)
+
+doc.update()
+
+doc.save()
+---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+Cell In[15], line 1
+----> 1 doc.save()
+
+AttributeError: 'Document' object has no attribute 'save'
+
+outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx").replace("\\","/")
+doc.saveDocx(outfile, open = True)
+Out[16]: 
+(HwxReportResult(status=0, message=''),
+ 'C:/Users/ajaguri/Documents/runplugin_docx.docx')
+
+doc.update()
+
+outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx").replace("\\","/")
+
+doc.saveDocx(outfile, open = True)
+Out[18]: 
+(HwxReportResult(status=-2, message='Error generating document with path: C:/Users/ajaguri/Documents/runplugin_docx.docx due to write permission denied.'),
+ '')
+
+outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx").replace("\\","/")
+
+doc.saveDocx(outfile, open = True)
+Out[19]: 
+(HwxReportResult(status=0, message=''),
+ 'C:/Users/ajaguri/Documents/runplugin_docx.docx')
