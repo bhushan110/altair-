@@ -858,6 +858,249 @@ If you want, I can now show:
 
 That will complete full understanding 🚀
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+from report.hwxdocxtypes import *
+from report.plugins.extensions import *
+import uuid
+import mdi
+import os
 
+#Note : Ensure model is loaded before running this script
+
+def RunPlugin():
+    se = ReportSession()
+    model = mdi.Model(se.name)
+    doc = Document()
+
+    # Session capture
+    pg = MDIReportPlugin(model, str(uuid.uuid1()), owner=doc._metaobj)
+    pg.name = "Session capture"
+    pg.cls = 'ModelStatistics'
+    # options = MDIScreenCaptureExt(pg.mdimodel, 'Session_capture_options', owner=pg)
+    ext = MDIModelStatisticsExt(pg.mdimodel, str(uuid.uuid1()), owner=pg)
+    ext.name = "ModelStatisticsExtension"
+    doc.update()
+    outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx").replace("\\","/")
+    doc.saveDocx(outfile, open = True)
+
+if __name__ == "__main__":
+    RunPlugin()    explain the flow of this codde 
+
+Good ✅ — this is the manual trigger version of your plugin.
+
+Earlier flow was:
+
+👉 UI Click → HyperWorks calls plugin automatically
+
+But THIS script is:
+
+👉 Python-driven execution of the same plugin
+(No menu click needed)
+
+Let’s walk the flow step-by-step in simple language.
+
+🌟 PURPOSE OF THIS SCRIPT
+
+This script:
+
+➡️ Runs ModelStatistics plugin manually
+➡️ Generates a Word report (.docx)
+➡️ Without clicking inside HyperMesh UI
+
+So it is:
+
+A standalone report generator
+
+🔁 COMPLETE FLOW
+
+Execution starts from:
+
+if __name__ == "__main__":
+    RunPlugin()
+
+So Python runs:
+
+👉 RunPlugin()
+
+🟢 STEP 1 — Create Report Session
+se = ReportSession()
+
+This creates:
+
+🧠 A reporting environment
+
+Think like:
+
+"Start a report recording session"
+
+Without this → no report can be created.
+
+🟢 STEP 2 — Get Current Model
+model = mdi.Model(se.name)
+
+This connects to:
+
+👉 Currently loaded HyperMesh model
+
+⚠️ Important:
+
+Model must already be open in HyperMesh
+(as comment says)
+
+So now:
+
+Object	Meaning
+se	Reporting session
+model	Current FE model
+🟢 STEP 3 — Create Document
+doc = Document()
+
+This creates:
+
+📄 Empty Word report
+
+Nothing inside yet.
+
+🟢 STEP 4 — Create Plugin Instance
+
+Now we manually create the plugin:
+
+pg = MDIReportPlugin(model, str(uuid.uuid1()), owner=doc._metaobj)
+
+This is SAME thing HyperWorks does when you click menu.
+
+We are doing it manually.
+
+So now:
+
+👉 Plugin is attached to document
+
+🟢 STEP 5 — Tell System Which Plugin to Run
+pg.cls = 'ModelStatistics'
+
+This is 🔥 VERY IMPORTANT.
+
+It tells:
+
+Use ModelStatistics logic
+
+So behind the scenes HyperWorks will load:
+
+ModelStatistics.execute()
+
+Same plugin you studied earlier.
+
+🟢 STEP 6 — Attach Extension
+ext = MDIModelStatisticsExt(pg.mdimodel, str(uuid.uuid1()), owner=pg)
+
+This adds:
+
+⚙️ Plugin settings container
+
+Extension stores things like:
+
+detailed statistics
+
+table split options
+
+page/window info
+
+Without extension → plugin won't run properly.
+
+🟢 STEP 7 — Update Document
+doc.update()
+
+This is the 🔑 trigger point.
+
+When this runs:
+
+HyperWorks internally does:
+
+Find plugin inside document
+↓
+See cls = ModelStatistics
+↓
+Load ModelStatistics class
+↓
+Call execute()
+↓
+Run HM logic
+↓
+Generate table
+↓
+Insert into doc
+
+So this line:
+
+👉 Executes the plugin
+
+🟢 STEP 8 — Define Output Path
+outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx")
+
+Creates save location:
+
+📁 User → Documents → runplugin_docx.docx
+
+🟢 STEP 9 — Save Report
+doc.saveDocx(outfile, open = True)
+
+Now:
+
+✔ Plugin results already inside doc
+✔ This saves report
+✔ Opens Word automatically
+
+🧭 FINAL FLOW SUMMARY
+RunPlugin()
+    ↓
+Create Report Session
+    ↓
+Connect to Loaded Model
+    ↓
+Create Empty Document
+    ↓
+Attach ModelStatistics Plugin
+    ↓
+Attach Extension
+    ↓
+doc.update()
+        ↓
+        execute() runs internally
+        ↓
+        Model counted
+        ↓
+        Table created
+        ↓
+        Inserted into document
+    ↓
+Save Word file
+    ↓
+Open report
+🧠 SIMPLE ANALOGY
+
+Earlier:
+
+👆 You clicked UI button
+
+Now:
+
+🤖 Script clicks button for you internally
+
+And:
+
+doc.update() = Invisible button press
+
+🟣 ONE LINE SUMMARY
+
+👉 This script manually runs the ModelStatistics report plugin and generates a Word report from the currently loaded HyperMesh model.
+
+If you want next, I can show:
+
+👉 Difference between doc.update() vs execute()
+👉 How to force detailed mode ON/OFF
+
+Just tell 👍
+
+Do you like this personality?
 
 
