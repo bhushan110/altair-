@@ -1,0 +1,863 @@
+
+
+
+You said:
+
+from report.api import *
+from report.cdm import *
+from report.reportutils import CreateAndFillTableData, get_output_type, createcontainer
+from report.plugins.extensions import MDIModelStatisticsExt
+from report.plugins.hwreportutils import Platform, getplatform, getActivePageAndWindow, makePageWindowActive
+import uuid
+from hwutl import hwVariant
+ 
+class ModelStatistics(ReportModule):
+    
+    def __init__(self):
+        super().__init__()
+        # Set plugin category to VALIDATE - Model Statistics
+        from report.api._private import PluginCategory, ReportEntityType, MenuAction
+        self._plugin_category = PluginCategory.VALIDATE
+        self._plugin_name = "ModelStatistics"
+        self._plugin_description = "Model Statistics - Generate model validation statistics including element counts, quality metrics"
+        self._plugin_version = "1.0.0"
+        self._plugin_display_name = "Model Statistics"
+        # This plugin supports presentations and documents
+        self._supported_entity_types = [ ReportEntityType.PRESENTATION, ReportEntityType.DOCUMENT]
+        
+        # Add menu actions
+        self.add_menu_action(MenuAction(
+            name='model_statistics',
+            text='Model Statistics',
+            entity_types=self._supported_entity_types,
+            category=self._plugin_category,
+            icon='browserPublishModelStatistics-16.png',
+            shortcut=''
+        ))
+    
+    # These dictionary data is based on hm/hmcore/hmelem.cxx 'elementgettype()' function.
+    zero_d = { 1:'Mass',
+               2:'Plot',
+               3:'Weld',
+               5:'Rigid',
+               27:'Xelem'}
+    
+    one_d = { 21:'Spring', 
+              22:'Joint', 
+              23:'Spring3', 
+              24:'Spring4', 
+              55:'Rigidlink', 
+              56:'Rbe3', 
+              57:'Ic', 
+              60:'Bar2', 
+              61:'Rod', 
+              63:'Bar3', 
+              70:'Gap',
+              135:'Secondary1'}
+    
+    two_d = { 103:'Tria3', 
+              104:'Quad4',
+              106:'Tria6',
+              108:'Quad8',
+              123:'Main3',
+              124:'Main4',
+              133:'Secondary3',
+              134:'Secondary4'}
+
+    three_d = { 204:'Tetra4',
+                205:'Pyramid5',
+                206:'Penta6',
+                208:'Hex8',
+                210:'Tetra10',
+                213:'Pyramid13',
+                215:'Penta15',
+                220:'Hex20'}
+    
+    @staticmethod
+    def model_statistics( context):
+        from report.report_utils import initializeContext
+        mdimodel,  mobj, entity_type = initializeContext(context)
+        
+        if(mobj.IsValid):
+            pg = MDIReportPlugin(mdimodel, str(uuid.uuid1()), owner=mobj)
+            pg.name = "Model Statistics"
+            pg.cls = 'ModelStatistics'
+            pg.description = "Model Statistics - Generate model validation statistics including element counts, quality metrics"
+            pg.version = "1.0.0"
+        
+            ext = MDIModelStatisticsExt(pg.mdimodel, str(uuid.uuid1()), owner=pg)
+            ext.name = "ModelStatisticsExtension"
+            return pg
+        
+        return None
+    
+    @classmethod
+    def displayname(cls):
+        return "Model Statistics"
+        
+    def execute(self, *args, **kwargs):
+        ext = self._getExtension()
+        client = getplatform(ext.page, ext.window)
+        if client == Platform.HM:
+            self._executeHM()
+        elif client == Platform.HV:
+            self._executeHV()
+
+    def _executeHM(self):
+        # HM python api works only for active window.
+        # If we need to capture statistics of different window, we need to make that window active.
+        import hm.entities as ent
+        active_page, active_window = getActivePageAndWindow()
+        ext = self._getExtension()
+        if ext.page != active_page or ext.window != active_window:
+            makePageWindowActive(ext.page, ext.window)
+            
+        import hm
+        model = hm.Model()
+        
+        nodes      = model.hm_count('nodes', 'all')
+        elements   = model.hm_count('elements', 'all')
+        components = model.hm_count('components', 'all')
+        sets       = model.hm_count('sets', 'all')
+        materials  = model.hm_count('materials', 'all')
+        properties = model.hm_count('properties', 'all')
+        systems    = model.hm_count('systems', 'all')
+        loads      = model.hm_count('loads', 'all')
+        
+        nodes_count      = nodes[1].count if nodes[0].status == 0 else 0
+        elements_count   = elements[1].count if elements[0].status == 0 else 0
+        components_count = components[1].count if components[0].status == 0 else 0
+        sets_count       = sets[1].count if sets[0].status == 0 else 0
+        materials_count  = materials[1].count if materials[0].status == 0 else 0
+        properties_count = properties[1].count if properties[0].status == 0 else 0
+        systems_count    = systems[1].count if systems[0].status == 0 else 0
+        loads_count      = loads[1].count if loads[0].status == 0 else 0
+        
+        table_data = []
+        cell_no_data = str("")
+        
+        ext = self._getExtension()
+        if ext.detailed_statistics:
+            table_data.append(['Item', 'Type', 'Count'])
+            table_data.append(['Nodes', cell_no_data, str(nodes_count)])
+            table_data.append(['Elements', cell_no_data, str(elements_count)])
+            
+            element_details = {}
+            zero_one_d_count = self._getElementCountBasedOnDimension(model, ModelStatistics.zero_d, element_details)
+            zero_one_d_count += self._getElementCountBasedOnDimension(model, ModelStatistics.one_d, element_details)
+            two_d_count = self._getElementCountBasedOnDimension(model, ModelStatistics.two_d, element_details)
+            three_d_count = self._getElementCountBasedOnDimension(model, ModelStatistics.three_d, element_details)
+            
+            table_data.append([cell_no_data, 'Solid (3D)', str(three_d_count)])
+            table_data.append([cell_no_data, 'Shell (2D)', str(two_d_count)])
+            table_data.append([cell_no_data, 'Beam (1D)', str(zero_one_d_count)])
+            
+            elem_fulltype = ent.Element.fulltype
+            for key, value in element_details.items():
+                elemtype_lower = key.lower()
+                status, res = model.hm_entityinfo_configtype(elem_fulltype, elemtype_lower)
+                if status.status == 0 and 'currentConfigTypeName' in res.keys:
+                    key = key + ' (' + res.currentConfigTypeName + ')'
+                table_data.append([cell_no_data, key, str(value)])
+                
+            table_data.append(['Components', cell_no_data, str(components_count)])
+            table_data.append(['Sets', cell_no_data, str(sets_count)])
+            table_data.append(['Materials', cell_no_data, str(materials_count)])
+            table_data.append(['Properties', cell_no_data, str(properties_count)])
+            table_data.append(['Systems', cell_no_data, str(systems_count)])
+            table_data.append(['Loads', cell_no_data, str(loads_count)])
+            
+            rows = len(table_data)
+            columns = 3
+        
+        else:
+            table_data.append(['Item', 'Count'])
+            if nodes_count > 0:
+                table_data.append(['Nodes', str(nodes_count)])
+            if elements_count > 0:
+                table_data.append(['Elements', str(elements_count)])
+            if components_count > 0:
+                table_data.append(['Components', str(components_count)])
+            if sets_count > 0:
+                table_data.append(['Sets', str(sets_count)])
+            if materials_count > 0:
+                table_data.append(['Materials', str(materials_count)])
+            if properties_count > 0:
+                table_data.append(['Properties', str(properties_count)])
+            if systems_count > 0:
+                table_data.append(['Systems', str(systems_count)])
+                
+            rows = len(table_data)
+            columns = 2
+            
+        self._createTable(rows, columns, table_data)
+        
+        # Statistics captured for different window. Restore active window as before.
+        if ext.page != active_page or ext.window != active_window:
+            makePageWindowActive(active_page, active_window)
+            
+    def _executeHV(self):
+        import hwi
+        ext     = self._getExtension()
+        session = hwi.getSessionHandle()
+        project = session.getProjectHandle()
+        page    = project.getPageHandle(ext.page)
+        window  = page.getWindowHandle(ext.window)
+        hv      = window.getClientHandle()
+        model   = hv.getModelHandle(hv.activeModel)
+        
+        cell_no_data = str("")
+        table_data = []
+        table_data.append(['Entity Type', 'Pool/Config', 'Number of Entities'])
+        
+        pool_type_list = model.getPoolTypeList()
+        for pool_type in pool_type_list:
+            pool_type_count = model.getEntityCount(pool_type)
+            display_name = None
+            
+            if pool_type == 'element':
+                display_name = 'Elements'
+                table_data.append([display_name, cell_no_data, str(pool_type_count)])
+                
+                config_list = model.getElementConfigList()
+                for config in config_list:
+                    config_count = model.getElementCount(config)
+                    table_data.append([cell_no_data, config + ' (config)', str(config_count)])
+            else:
+                if 'node' in pool_type:
+                    display_name = 'Nodes'
+                elif 'part' in pool_type:
+                    display_name = 'Components'
+                elif 'system' in pool_type:
+                    display_name = 'Systems'
+                elif 'assembly' in pool_type:
+                    display_name = 'Assemblies'
+                elif 'set' in pool_type:
+                    display_name = 'Sets'
+                elif 'material' in pool_type:
+                    display_name = 'Materials'
+                elif 'property' in pool_type:
+                    display_name = 'Properties'
+                elif 'note' in pool_type:
+                    display_name = 'Notes'
+                table_data.append([display_name, cell_no_data, str(pool_type_count)])
+                
+            pool_list = model.getPoolList(pool_type)
+            for pool in pool_list:
+                pool_count = model.getEntityCount(pool_type, pool)
+                pool_text = pool + ' (pool)' if pool_type == 'element' else pool
+                table_data.append([cell_no_data, pool_text, str(pool_count)])
+                
+        rows = len(table_data)
+        columns = 3
+        self._createTable(rows, columns, table_data)
+            
+    def _setRowValue(self, table_if, row_index, values:list):
+        for i, value in enumerate(values):
+            table_if.SetValue(row_index, i, hwVariant(value))
+            
+    def _getElementCountBasedOnDimension(self, model, dimension, element_details):
+        count = 0
+        for key, value in dimension.items():
+            elem = model.hm_count('elements', 'all', key)
+            if elem[0].status == 0:
+                count += elem[1].count
+                
+                if elem[1].count > 0:
+                    element_details[value] = elem[1].count
+        return count
+        
+    def showwidget(self, data):
+        dlg = ModelStatisticsDialog(None, strategy=self.strategy, plugin=self.parent)
+        dlg.show()
+    
+    def getwidgetclass(self):
+        return "ModelStatisticsDialog"
+    
+        
+    def _getExtension(self):
+        plugin = self.parent
+        for ext in plugin.extensions:
+            if isinstance(ext, MDIModelStatisticsExt):
+                return ext
+        else:
+            return None
+        
+    def _createTable(self, rows, cols, table_data):
+        plugin = self.parent
+        output_type = get_output_type(plugin)
+        slide = createcontainer(output_type, plugin, 'Model Statistics')
+        
+        _, table = CreateAndFillTableData('Model Statistics', slide, table_data)
+        table.caption = 'Model Statistics' if output_type == 'document' else ''
+        table.stretch = False if output_type == 'document' else True    # Stretch made false for html. No effect on document.
+
+        ext = self._getExtension()
+        if ext is None:
+            return
+        table.splitAuto = ext.auto_split_table
+        table.splitMaxRows = ext.maxrow
+        table.splitMaxColumns = ext.maxcolumn
+
+register_class(ModelStatistics, ModelStatistics)           ,  from report.hwxdocxtypes import *
+from report.plugins.extensions import *
+import uuid
+import mdi
+import os
+
+#Note : Ensure model is loaded before running this script
+
+def RunPlugin():
+    se = ReportSession()
+    model = mdi.Model(se.name)
+    doc = Document()
+
+    # Session capture
+    pg = MDIReportPlugin(model, str(uuid.uuid1()), owner=doc._metaobj)
+    pg.name = "Session capture"
+    pg.cls = 'ModelStatistics'
+    # options = MDIScreenCaptureExt(pg.mdimodel, 'Session_capture_options', owner=pg)
+    ext = MDIModelStatisticsExt(pg.mdimodel, str(uuid.uuid1()), owner=pg)
+    ext.name = "ModelStatisticsExtension"
+    doc.update()
+    outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx").replace("\\","/")
+    doc.saveDocx(outfile, open = True)
+
+if __name__ == "__main__":
+    RunPlugin()  explain me the code flow in detil how it is working what it is on , code in dertail
+
+ChatGPT said:
+Great 👍 — this is a HyperWorks Report Plugin code.
+
+You are basically asking:
+
+👉 What is this code?
+👉 Where does it run?
+👉 How does it flow?
+👉 What happens step-by-step?
+
+I’ll explain in very simple language (as you prefer 🙂).
+
+🌟 BIG PICTURE — What is this code?
+This is a Model Statistics Report Plugin
+
+➡️ It runs inside:
+
+🟦 HyperMesh (HM) OR
+
+🟩 HyperView (HV)
+
+And its job is:
+
+👉 Count model data like:
+
+Nodes
+
+Elements
+
+Components
+
+Materials
+
+Properties
+
+Loads
+
+Systems
+
+etc.
+
+Then…
+
+📄 It automatically creates a Report (DOCX / PPT / HTML)
+containing these statistics in table format.
+
+So this is:
+
+A VALIDATION TOOL that checks model size & structure
+
+🧠 WHERE IT RUNS?
+This is not normal Python.
+
+It runs inside:
+
+👉 Altair HyperWorks Reporting Framework
+
+Uses:
+
+report.api
+report.cdm
+hm API
+hwi API
+mdi framework
+So it is a plugin module.
+
+⚙️ FLOW OF EXECUTION (STEP BY STEP)
+Let’s go in actual execution order 👇
+
+🟢 STEP 1 — Plugin Class Created
+class ModelStatistics(ReportModule):
+This tells HyperWorks:
+
+👉 This is a report plugin
+
+Inside __init__() we register:
+
+self._plugin_category = VALIDATE
+self._plugin_name = "ModelStatistics"
+self._supported_entity_types = PRESENTATION, DOCUMENT
+Meaning:
+
+✔ Appears in VALIDATE menu
+✔ Can generate PPT / DOC
+
+Also menu button added:
+
+Model Statistics
+🟢 STEP 2 — Element Type Mapping
+These dictionaries classify element types:
+
+Dimension	Meaning
+zero_d	0D elements (mass, weld etc.)
+one_d	1D elements (beam, spring etc.)
+two_d	2D elements (shells)
+three_d	3D elements (solids)
+Example:
+
+two_d = {103:'Tria3', 104:'Quad4'}
+Used later for element breakdown.
+
+🟢 STEP 3 — Plugin Activated
+When user clicks:
+
+👉 Model Statistics
+
+This function runs:
+
+model_statistics(context)
+It:
+
+Gets model context
+
+Creates plugin instance
+
+pg = MDIReportPlugin(...)
+Adds extension:
+
+ext = MDIModelStatisticsExt(...)
+Extension stores:
+
+page
+
+window
+
+detailed / simple mode
+
+table split settings
+
+So plugin is now ready.
+
+🟢 STEP 4 — Execution Starts
+execute()
+Now system checks:
+
+👉 Is this HM or HV ?
+
+client = getplatform()
+Then:
+
+Platform	Function
+HyperMesh	_executeHM()
+HyperView	_executeHV()
+🟦 STEP 5 — HyperMesh Flow (_executeHM())
+This is main logic 🔥
+
+First:
+
+model = hm.Model()
+Then counts are taken:
+
+model.hm_count('nodes')
+model.hm_count('elements')
+model.hm_count('components')
+model.hm_count('materials')
+So it reads:
+
+✔ Nodes
+✔ Elements
+✔ Components
+✔ Sets
+✔ Materials
+✔ Properties
+✔ Systems
+✔ Loads
+
+If Detailed Mode ON
+It builds table like:
+
+Item	Type	Count
+Nodes		10500
+Elements		25000
+Solid (3D)	10000
+Shell (2D)	12000
+Beam (1D)	3000
+Then it goes deeper 👇
+
+Calls:
+
+_getElementCountBasedOnDimension()
+Which checks:
+
+How many Tria3
+
+Quad4
+
+Tetra4
+
+Hex8
+etc.
+
+So full element breakdown added.
+
+If Simple Mode
+Only:
+
+Item	Count
+Nodes	10500
+Elements	25000
+Components	45
+Finally:
+
+self._createTable()
+creates report table.
+
+🟩 STEP 6 — HyperView Flow (_executeHV())
+If model opened in HyperView:
+
+Uses:
+
+hwi.getSessionHandle()
+Then reads:
+
+entity pools
+
+config types
+
+element pools
+
+Example:
+
+Entity Type	Pool	Count
+Elements	Solid	5000
+Elements	Shell	2000
+So HV uses visualization model stats.
+
+🟢 STEP 7 — Table Creation
+All collected data is sent to:
+
+_createTable()
+This does:
+
+slide = createcontainer(...)
+CreateAndFillTableData(...)
+So table is inserted into:
+
+📄 Word / PPT / HTML report
+
+Extension settings applied:
+
+table.splitAuto
+table.splitMaxRows
+🟢 STEP 8 — RunPlugin() (Standalone Mode)
+This part:
+
+def RunPlugin():
+Allows running plugin without UI.
+
+Flow:
+
+Create Report Session
+
+se = ReportSession()
+Load model
+
+model = mdi.Model(se.name)
+Create Document
+
+doc = Document()
+Attach Plugin
+
+pg = MDIReportPlugin(...)
+ext = MDIModelStatisticsExt(...)
+Generate report
+
+doc.saveDocx()
+Output:
+
+📄 runplugin_docx.docx
+saved in Documents folder.
+
+🧭 FINAL FLOW SUMMARY
+User Clicks → Model Statistics
+
+     ↓
+
+Plugin Created
+
+     ↓
+
+Detect Platform
+     ↓
+HM → Count model data
+HV → Read pool data
+
+     ↓
+
+Element classification
+     ↓
+
+Table generated
+
+     ↓
+
+Inserted into
+DOCX / PPT / HTML
+
+     ↓
+
+Report saved
+🧠 IN REAL LIFE — WHY USED?
+Engineers use this for:
+
+✔ Model validation
+✔ Pre-check before simulation
+✔ Documentation
+✔ Reporting model size
+✔ Element distribution check
+
+🟣 ONE LINE SUMMARY
+👉 This plugin automatically analyzes your FE model and generates a report showing counts of nodes, elements, components, and element types.
+
+If you want, I can also explain:
+
+➡️ How extension controls UI
+➡️ How table API works
+➡️ How HM API hm_count works internally
+
+Just tell 👍
+
+
+You said:
+as i how the execute funtion is called , as i have runt eh report plugin in hypermesh , as it calls for model statistics .py then what happwn
+
+ChatGPT said:
+Perfect — this is the exact missing link most people don’t understand 👍
+
+You are asking:
+
+👉 When I click Model Statistics in HyperMesh Report → how does execute() get called?
+Because we never called it manually.
+
+Let’s break the REAL INTERNAL FLOW 🔥
+(Simple language step-by-step)
+
+🟢 STEP 1 — HyperMesh Loads Plugin
+When HyperWorks starts OR report plugins refresh…
+
+It scans plugin folders and finds:
+
+ModelStatistics.py
+Then this line is VERY IMPORTANT:
+
+register_class(ModelStatistics, ModelStatistics)
+👉 This registers your class into HyperWorks Reporting Framework.
+
+So now HyperWorks knows:
+
+"There is a VALIDATE plugin called Model Statistics"
+
+🟢 STEP 2 — Menu Button Created
+Inside __init__():
+
+self.add_menu_action(MenuAction(
+    name='model_statistics',
+    text='Model Statistics',
+    category=VALIDATE
+))
+This tells HyperWorks:
+
+➡️ Add a button in:
+
+Report → Validate → Model Statistics
+So now UI button is linked to this plugin.
+
+🟢 STEP 3 — User Clicks "Model Statistics"
+Now HyperWorks internally does:
+
+👉 Call this STATIC method:
+
+ModelStatistics.model_statistics(context)
+⚠️ This is the ENTRY POINT
+
+You didn't call it — HyperWorks calls it automatically.
+
+🟢 STEP 4 — Plugin Object Created
+Inside:
+
+model_statistics(context)
+It creates:
+
+pg = MDIReportPlugin(...)
+This is:
+
+👉 Runtime plugin instance
+
+Then attaches:
+
+ext = MDIModelStatisticsExt(...)
+So now HyperWorks has:
+
+Object	Purpose
+pg	Plugin runtime
+ext	Settings holder
+Then returns:
+
+return pg
+Now HyperWorks knows:
+
+✔ Plugin is ready
+✔ Extension attached
+✔ Model linked
+
+🟢 STEP 5 — HyperWorks Calls execute()
+Once plugin instance is returned…
+
+HyperWorks framework automatically runs:
+
+pg.execute()
+Since your class inherits:
+
+class ModelStatistics(ReportModule)
+Framework internally does:
+
+👉 Strategy execution pipeline
+
+So it calls:
+
+ModelStatistics.execute()
+You don’t see this — but Reporting Engine does it.
+
+🟢 STEP 6 — execute() Decides Platform
+Now this runs:
+
+client = getplatform(ext.page, ext.window)
+It checks:
+
+Where model opened?	Result
+HyperMesh	HM
+HyperView	HV
+🟢 STEP 7 — Correct Engine Called
+If HyperMesh:
+
+self._executeHM()
+If HyperView:
+
+self._executeHV()
+So now real logic begins.
+
+🟢 STEP 8 — HM Execution Starts
+Inside:
+
+_executeHM()
+It:
+
+Activates correct window
+
+Loads model
+
+model = hm.Model()
+Counts:
+
+hm_count('nodes')
+hm_count('elements')
+hm_count('components')
+...
+Creates table data
+
+🟢 STEP 9 — Table Generated
+Finally:
+
+self._createTable()
+This sends table to:
+
+👉 Word / PPT / HTML report
+
+🟢 STEP 10 — Report Updates
+HyperWorks adds this to current report session.
+
+So user sees:
+
+📄 Model Statistics section
+
+🔁 FULL INVISIBLE CALL FLOW
+When you click:
+
+Report → Validate → Model Statistics
+HyperWorks does internally:
+
+↓ User Click
+↓
+model_statistics(context)
+↓
+Create Plugin Instance
+↓
+Attach Extension
+↓
+Return Plugin
+↓
+Framework calls execute()
+↓
+execute()
+↓
+_executeHM()
+↓
+Collect counts
+↓
+_createTable()
+↓
+Insert into report
+🧠 KEY ANSWER
+👉 execute() is NOT called by your code.
+
+It is called automatically by:
+
+🧩 HyperWorks Reporting Framework
+after your plugin is returned from:
+
+model_statistics()
+🟣 REAL LIFE ANALOGY
+Think like:
+
+You install a mobile app 📱
+
+You click icon → OS calls:
+
+onStart()
+You didn’t call it.
+
+Same here:
+
+HyperWorks = OS
+Plugin = App
+execute() = onStart()
+
+If you want, I can now show:
+
+👉 How extension controls UI checkboxes
+👉 How ReportModule lifecycle works internally
+
+That will complete full understanding 🚀
+
+
+
+
