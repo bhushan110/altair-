@@ -1,0 +1,23 @@
+from report.hwxdocxtypes import *
+from report.plugins.extensions import *
+import uuid
+import mdi
+import os
+
+#Note : Ensure model is loaded before running this script
+
+def RunPlugin():
+    # filename= #excel file path 
+    #find a way to open the file in python , 
+    #find a way to read each cell by cell,
+    #find a way when to stop reading 
+    #print in the pyhton window.
+
+
+if __name__ == "__main__":
+    RunPlugin()
+
+
+
+    have to write the code in the run plugin file   , as how to read the excel file and how to get the contents out of it , and run this file .
+    
