@@ -20,4 +20,67 @@ if __name__ == "__main__":
 
 
     have to write the code in the run plugin file   , as how to read the excel file and how to get the contents out of it , and run this file .
-    
+
+
+
+
+
+import openpyxl
+import mdi 
+import os
+from report.hwxdocxtypes import *
+from report.plugins.extensions import *
+def RunPlugin(self):
+    se= ReportSession()
+    model = mdi.Model(se.name)
+    doc = Document()
+
+    # # Session capture
+    # pg = MDIReportPlugin(model, str(uuid.uuid1()), owner=doc._metaobj)
+    # pg.name = "Excel Report"
+    # pg.cls = 'ExcelReport'
+    # # options = MDIScreenCaptureExt(pg.mdimodel, 'Session_capture_options', owner=pg)
+    # # ext = MDIModelStatisticsExt(pg.mdimodel, str(uuid.uuid1()), owner=pg)
+    # # ext.name = "ModelStatisticsExtension"
+   
+    # # pg.execute()
+    # doc.update()
+    # outfile = os.path.join(os.path.expanduser("~"), "Documents", "runplugin_docx.docx").replace("\\","/")
+    # doc.saveDocx(outfile, open = True)
+
+        #   Load Excel
+    file_path = "C:/Users/ajaguri/Documents/Book1.xlsx"
+    wb = openpyxl.load_workbook(file_path)
+    sheet = wb.active
+
+        #   Read Excel Data
+    table_data = []
+
+        # for row in sheet.iter_rows(values_only=True):
+        #       if all(cell is None for cell in row):
+        #             break
+        #       print(row)
+
+        # print("no of rows",sheet.max_row)
+        # print("no of columns",sheet.max_column)
+    for row in sheet.iter_rows(values_only=True):
+            table_data.append([str(cell) if cell is not None else "" for cell in row])
+
+        #   Create Report Table
+    self._createTable(table_data)
+
+
+def _createTable(self, table_data):
+
+        plugin = self.parent
+        output_type = get_output_type(plugin)
+
+        slide = createcontainer(output_type, plugin, 'Excel Report')
+
+        _, table = CreateAndFillTableData('Excel Report', slide, table_data)
+
+        table.caption = 'Excel Report'   
+
+
+if __name__ == "__main__":
+    RunPlugin(self)
