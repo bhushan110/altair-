@@ -84,3 +84,106 @@ def _createTable(self, table_data):
 
 if __name__ == "__main__":
     RunPlugin(self)
+
+----------------------------------------------------------------------------------------->
+excel file converter in excelreport
+from report.api import *
+from report.cdm import *
+from report.reportutils import CreateAndFillTableData, get_output_type, createcontainer
+import uuid
+import openpyxl
+import os
+
+class ExcelReport(ReportModule):
+
+    def __init__(self):
+        super().__init__()
+        from report.api._private import PluginCategory, ReportEntityType
+
+        self._plugin_category = PluginCategory.VALIDATE
+        self._plugin_name = "ExcelReport"
+        self._plugin_description = "Excel Report Plugin"
+        self._plugin_version = "1.0.0"
+        self._plugin_display_name = "Excel Report"
+        self._supported_entity_types = [
+            ReportEntityType.PRESENTATION,
+            ReportEntityType.DOCUMENT
+        ]
+
+    @classmethod
+    def displayname(cls):
+        return "Excel Report"
+
+    def execute(self, *args, **kwargs):
+
+       
+        file_path = "C:/Users/ajaguri/Documents/Book1.xlsx"
+
+        wb = openpyxl.load_workbook(file_path)
+        sheet = wb.active
+
+        table_data = []
+
+        for row in sheet.iter_rows(values_only=True):
+            table_data.append([
+                str(cell) if cell is not None else "" for cell in row
+            ])
+
+        rows = len(table_data)
+        cols = len(table_data[0]) if rows > 0 else 0
+
+        # for r in table_data:
+        #    for c in r:
+        #       print(c, type(c))
+
+        self._createTable(rows, cols, table_data)
+
+    def _createTable(self, rows, cols, table_data):
+
+        plugin = self.parent
+        output_type = get_output_type(plugin)
+
+        container = createcontainer(output_type, plugin, 'Excel Report')
+
+        # _, table = CreateAndFillTableData(
+        #     'Excel Report',
+        #     container,
+        #     table_data
+        # )
+
+        table.caption = 'Excel Report'
+        table.stretch = False if output_type == 'document' else True
+        
+        # for r in range(rows):
+        #     for c in range(cols):
+        #         cell = table.cell(r, c)
+        #         cell.text = str(table_data[r][c])
+
+register_class(ExcelReport, ExcelReport)
+------------------------------------------run plugin also 
+import uuid
+import os
+import mdi
+from report.api import *
+from report.hwxdocxtypes import *
+
+
+def RunPlugin():
+
+    se = ReportSession()
+    model = mdi.Model(se.name)
+    doc = Document()
+
+    pg = MDIReportPlugin(model, str(uuid.uuid1()), owner=doc._metaobj)
+    pg.name = "Excel Report"
+    pg.cls = "ExcelReport"
+
+    doc.update()
+
+    outfile = os.path.join(os.path.expanduser("~"),"Documents","runplugin_docx.docx").replace("\\", "/")
+
+    doc.saveDocx(outfile, open=True)
+
+
+if __name__ == "__main__":
+    RunPlugin()
