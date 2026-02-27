@@ -1,0 +1,53 @@
+def CreateAndFillTableData(tablename, parent, data):
+    from hwutl import hwVariant
+    table_data = hwreport.TableData(tablename, len(data), len(data[0]), parent.entity, parent.mdimodel.name)
+    for i, row in enumerate(data):
+        for j, value in enumerate(row):
+            table_data.SetValue(i, j, hwVariant(value))
+           
+    table_entity = hwdescriptor.Entity()
+    table_data.GetTable(table_entity)
+   
+    table = MDIReportTable(parent.mdimodel, table_entity.uid.string)
+    return table_data, table
+ ----------------------------------------------------------------------------------
+def get_output_type(output):
+        library = None
+        item = output
+        while item:
+            clsname = item.GetEntityFullType().GetTypeNamed().split('.')[-1]
+            if clsname == "MDIReportPresentation":
+                return "presentation"
+            elif clsname == "MDIReportDocument":
+                return "document"
+            elif clsname == 'MDIReportPalette':
+                library = item
+                break
+            item = item.owner
+           
+        if library:
+            mdimodel = library.mdimodel
+            sess = MDIReportSession(mdimodel, library.mdimodel.name)
+            col = mdi.Collection(mdimodel, MDIReport)
+            for item in col:
+                reportitems = item.reportitems
+                root = reportitems[0]
+                if isinstance(root, MDIReportPresentation):
+                    return "presentation"
+                else:
+                    return "document"
+                break
+               
+        return None
+ 
+ ---------------------------------------------------------------------------------------
+def createcontainer(output_type, parent, name=''):
+    if output_type == "presentation":
+        slide = MDIReportSlide(parent.mdimodel, str(uuid.uuid1()), owner=parent)
+        slide.title = name
+    else:
+        slide = MDIReportChapter(parent.mdimodel, str(uuid.uuid1()), owner=parent)
+    slide.name = name
+ 
+    return slide
+ 
