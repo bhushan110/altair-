@@ -187,3 +187,96 @@ def RunPlugin():
 
 if __name__ == "__main__":
     RunPlugin()
+
+--------------------------------------------------------excel file , by cloude ai
+from report.api import *
+from report.cdm import *
+from report.reportutils import get_output_type, createcontainer
+from report.hwxdocxtypes import *
+from report.plugins.extensions import *
+import openpyxl
+import hwreport
+from hwutl import hwVariant
+import os
+
+
+class ExcelReport(ReportModule):
+
+    def __init__(self):
+        super().__init__()
+        from report.api._private import PluginCategory, ReportEntityType
+
+        self._plugin_category = PluginCategory.VALIDATE
+        self._plugin_name = "ExcelReport"
+        self._plugin_description = "Excel Report Plugin"
+        self._plugin_version = "1.0.0"
+        self._plugin_display_name = "Excel Report"
+        self._supported_entity_types = [
+            ReportEntityType.PRESENTATION,
+            ReportEntityType.DOCUMENT,
+        ]
+
+    @classmethod
+    def displayname(cls):
+        return "Excel Report"
+
+    def execute(self, *args, **kwargs):
+        print("Executing Excel Report Plugin")
+
+        # Pull file path from plugin properties set by the runner
+        file_path = self.properties.get("excel_file_path", "")
+        if not file_path or not os.path.isfile(file_path):
+            raise FileNotFoundError(f"Excel file not found: '{file_path}'. "
+                                     "Set 'excel_file_path' in plugin properties.")
+
+        wb = openpyxl.load_workbook(file_path)
+        sheet = wb.active
+
+        table_data = [
+            [str(cell) if cell is not None else "" for cell in row]
+            for row in sheet.iter_rows(values_only=True)
+        ]
+
+        if not table_data:
+            print("Warning: Excel sheet is empty, nothing to report.")
+            return
+
+        self._createTable(table_data)
+        print("Excel Report Plugin execution completed")
+
+    def _createTable(self, table_data):
+        rows = len(table_data)
+        cols = len(table_data[0]) if rows > 0 else 0
+
+        plugin = self.parent
+        output_type = get_output_type(plugin)
+        chapter = createcontainer(output_type, plugin, "Excel Report")
+
+        # Keep table_data_ref alive — dropping it risks GC of the native C++ object
+        table_data_ref, table = self._createAndFillTableData(
+            "Excel Report", chapter, table_data
+        )
+
+        print(f"Table created: {rows} rows x {cols} cols")
+
+    def _createAndFillTableData(self, tablename, parent, data):
+        rows = len(data)
+        cols = len(data[0]) if rows > 0 else 0
+        print(f"Building TableData '{tablename}': {rows} rows x {cols} cols")
+
+        table_data = hwreport.TableData(
+            tablename, rows, cols, parent.entity, parent.mdimodel.name
+        )
+
+        for i, row in enumerate(data):
+            for j, value in enumerate(row):
+                table_data.SetValue(i, j, hwVariant(value))
+
+        table_entity = hwdescriptor.Entity()
+        table_data.GetTable(table_entity)
+
+        table = MDIReportTable(parent.mdimodel, table_entity.uid.string)
+        return table_data, table  # both returned to keep native ref alive
+
+
+register_class(ExcelReport, ExcelReport)
